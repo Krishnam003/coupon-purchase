@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract CouponPurchase {
+    address public adminAddress;
+    mapping(address => bool) private hasPurchasedCoupon;
+    mapping(address => uint) private couponDiscounts;
+
+    event CouponPurchased(address indexed buyer, uint discount);
+    event DiscountApplied(address indexed user, uint originalAmount, uint discountedAmount);
+
+    constructor() {
+        adminAddress = msg.sender;
+    }
+
+    function purchaseCoupon(uint discount) public {
+        assert(discount > 0 && discount <= 50);
+        assert(!hasPurchasedCoupon[msg.sender]);
+
+        hasPurchasedCoupon[msg.sender] = true;
+        couponDiscounts[msg.sender] = discount;
+
+        emit CouponPurchased(msg.sender, discount);
+    }
+
+    function applyCoupon(uint amount) public returns (uint discountedAmount) {
+        require(hasPurchasedCoupon[msg.sender], "You haven't purchased any coupon");
+        assert(amount > 0);
+
+        
+        discountedAmount = amount - (amount * couponDiscounts[msg.sender]) / 100;
+
+        emit DiscountApplied(msg.sender, amount, discountedAmount);
+
+        return discountedAmount;
+    }
+
+    function sellCoupon(address buyer, uint discount) public  {
+        require(discount > 0, "Discount should be greater than 0");
+        assert(discount > 0 && discount <= 50);
+
+        if (hasPurchasedCoupon[buyer]) {
+            revert("Buyer already has a coupon");
+        }
+
+        hasPurchasedCoupon[buyer] = true;
+        couponDiscounts[buyer] = discount;
+
+        emit CouponPurchased(buyer, discount);
+    }
+}
